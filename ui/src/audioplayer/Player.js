@@ -10,6 +10,7 @@ import { scrobble, syncQueue, currentPlaying, setVolume } from './queue'
 import themes from '../themes'
 import { makeStyles } from '@material-ui/core/styles'
 import config from '../config'
+import PlayerToolbar from './PlayerToolbar'
 
 const useStyle = makeStyles((theme) => ({
   audioTitle: {
@@ -89,15 +90,17 @@ const Player = () => {
   const dispatch = useDispatch()
   const queue = useSelector((state) => state.queue)
   const { authenticated } = useAuthState()
+  const current = queue.current || {}
 
   const options = useMemo(() => {
     return {
       ...defaultOptions,
       clearPriorAudioLists: queue.clear,
       audioLists: queue.queue.map((item) => item),
+      extendsContent: <PlayerToolbar id={current.trackId} />,
       defaultVolume: queue.volume,
     }
-  }, [queue.clear, queue.queue, queue.volume, defaultOptions])
+  }, [queue.clear, queue.queue, queue.volume, current, defaultOptions])
 
   const OnAudioListsChange = useCallback(
     (currentPlayIndex, audioLists) => {
