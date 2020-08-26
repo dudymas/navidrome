@@ -17,14 +17,23 @@ const useStyle = makeStyles((theme) => ({
     textDecoration: 'none',
     color: theme.palette.primary.light,
   },
+  player: {
+    display: (props) => (props.visible ? 'block' : 'none'),
+  },
 }))
 
 const Player = () => {
-  const classes = useStyle()
   const translate = useTranslate()
   const currentTheme = useSelector((state) => state.theme)
   const theme = themes[currentTheme] || themes.DarkTheme
   const playerTheme = (theme.player && theme.player.theme) || 'dark'
+  const dataProvider = useDataProvider()
+  const dispatch = useDispatch()
+  const queue = useSelector((state) => state.queue)
+  const { authenticated } = useAuthState()
+
+  const visible = authenticated && queue.queue.length > 0
+  const classes = useStyle({ visible })
 
   const audioTitle = useCallback(
     (audioInfo) => (
@@ -86,12 +95,7 @@ const Player = () => {
     },
   }
 
-  const dataProvider = useDataProvider()
-  const dispatch = useDispatch()
-  const queue = useSelector((state) => state.queue)
-  const { authenticated } = useAuthState()
   const current = queue.current || {}
-
   const options = useMemo(() => {
     return {
       ...defaultOptions,
@@ -166,21 +170,21 @@ const Player = () => {
     [dispatch, dataProvider]
   )
 
-  if (authenticated && options.audioLists.length > 0) {
-    return (
-      <ReactJkMusicPlayer
-        {...options}
-        onAudioListsChange={OnAudioListsChange}
-        onAudioProgress={OnAudioProgress}
-        onAudioPlay={OnAudioPlay}
-        onAudioPause={onAudioPause}
-        onAudioEnded={onAudioEnded}
-        onAudioVolumeChange={onAudioVolumeChange}
-      />
-    )
+  if (!visible) {
+    document.title = 'Navidrome'
   }
-  document.title = 'Navidrome'
-  return null
+  return (
+    <ReactJkMusicPlayer
+      {...options}
+      className={classes.player}
+      onAudioListsChange={OnAudioListsChange}
+      onAudioProgress={OnAudioProgress}
+      onAudioPlay={OnAudioPlay}
+      onAudioPause={onAudioPause}
+      onAudioEnded={onAudioEnded}
+      onAudioVolumeChange={onAudioVolumeChange}
+    />
+  )
 }
 
 export default Player
