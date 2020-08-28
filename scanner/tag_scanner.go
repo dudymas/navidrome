@@ -18,14 +18,21 @@ import (
 type TagScanner struct {
 	rootFolder string
 	ds         model.DataStore
+	loader     MediaLoader
 	mapper     *mediaFileMapper
 	plsSync    *playlistSync
 	cnt        *counters
 }
 
+// MediaLoader can return a map of media for scanning
+type MediaLoader interface {
+	LoadDirTree(context.Context) (dirMap, error)
+}
+
 func NewTagScanner(rootFolder string, ds model.DataStore) *TagScanner {
 	return &TagScanner{
 		rootFolder: rootFolder,
+		loader:     newMediaFileLoader(rootFolder),
 		mapper:     newMediaFileMapper(rootFolder),
 		plsSync:    newPlaylistSync(ds),
 		ds:         ds,
@@ -134,7 +141,7 @@ func (s *TagScanner) Scan(ctx context.Context, lastModifiedSince time.Time) erro
 func (s *TagScanner) getDirTree(ctx context.Context) (dirMap, error) {
 	start := time.Now()
 	log.Trace(ctx, "Loading directory tree from music folder", "folder", s.rootFolder)
-	dirs, err := loadDirTree(ctx, s.rootFolder)
+	dirs, err := s.loader.LoadDirTree(ctx)
 	if err != nil {
 		return nil, err
 	}

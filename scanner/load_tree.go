@@ -22,22 +22,35 @@ type (
 	dirMap = map[string]dirMapValue
 )
 
-func loadDirTree(ctx context.Context, rootFolder string) (dirMap, error) {
+// LocalFsClient is a local filesystem client.
+type LocalFsClient struct {
+	rootFolder string
+	rootPath   string
+}
+
+func newMediaFileLoader(rootFolder string) *LocalFsClient {
+	return &LocalFsClient{
+		rootFolder: rootFolder,
+	}
+}
+
+// LoadDirTree populates a directory map with media locations
+func (c LocalFsClient) LoadDirTree(ctx context.Context) (dirMap, error) {
 	newMap := make(dirMap)
-	err := loadMap(ctx, rootFolder, rootFolder, newMap)
+	err := c.loadMap(ctx, c.rootFolder, newMap)
 	if err != nil {
 		log.Error(ctx, "Error loading directory tree", err)
 	}
 	return newMap, err
 }
 
-func loadMap(ctx context.Context, rootPath string, currentFolder string, dirMap dirMap) error {
-	children, dirMapValue, err := loadDir(ctx, currentFolder)
+func (c LocalFsClient) loadMap(ctx context.Context, currentFolder string, dirMap dirMap) error {
+	children, dirMapValue, err := c.loadDir(ctx, currentFolder)
 	if err != nil {
 		return err
 	}
-	for _, c := range children {
-		err := loadMap(ctx, rootPath, c, dirMap)
+	for _, child := range children {
+		err := c.loadMap(ctx, child, dirMap)
 		if err != nil {
 			return err
 		}
@@ -49,7 +62,7 @@ func loadMap(ctx context.Context, rootPath string, currentFolder string, dirMap 
 	return nil
 }
 
-func loadDir(ctx context.Context, dirPath string) (children []string, info dirMapValue, err error) {
+func (c LocalFsClient) loadDir(ctx context.Context, dirPath string) (children []string, info dirMapValue, err error) {
 	dirInfo, err := os.Stat(dirPath)
 	if err != nil {
 		log.Error(ctx, "Error stating dir", "path", dirPath, err)
