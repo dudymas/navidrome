@@ -2,63 +2,67 @@ package scanner
 
 import (
 	"context"
+	"strings"
 
-	"github.com/deluan/navidrome/utils"
-	b2 "github.com/kothar/go-backblaze"
+	s3 "github.com/minio/minio-go/v7"
+	s3Creds "github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-// B2Client manages state and credentials of a b2 object store
-type B2Client struct {
-	bucket   *b2.Bucket
-	rootPath string
+// S3Client represents an object store client
+type S3Client struct {
+	client *s3.Client
 }
 
-func newB2Client(account, appkey, bucket, path string) (*B2Client, error) {
-	creds := b2.Credentials{
-		AccountID:      account,
-		ApplicationKey: appkey,
-	}
-	client, err := b2.NewB2(creds)
-	if err != nil {
-		return nil, err
-	}
-	b, err := client.Bucket(bucket)
-	if err != nil {
-		return nil, err
-	}
-	return &B2Client{b, path}, err
+func newB2Client(account, appkey, bucket, path string) (*S3Client, error) {
+	endpoint := "localhost:9000"
+	accessKeyID := "AKIAIOSFODNN7EXAMPLE"
+	secretAccessKey := "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+	useSSL := false
+	creds := s3Creds.NewStaticV4(accessKeyID, secretAccessKey, "")
+	client, err := s3.New(
+		endpoint,
+		&s3.Options{
+			Creds:  creds,
+			Secure: useSSL,
+		},
+	)
+	return &S3Client{client}, err
 }
 
 // LoadDirTree lists objects in a B2 bucket and maps media found therein
-func (c B2Client) LoadDirTree(ctx context.Context) (dirMap, error) {
+func (c S3Client) LoadDirTree(ctx context.Context) (dirMap, error) {
 	newMap := make(dirMap)
-	err := c.loadMap(ctx, c.rootPath, newMap)
+	err := c.loadMap(ctx, newMap)
 	return newMap, err
 }
 
-func (c B2Client) loadMap(ctx context.Context, path string, mapping dirMap) error {
-	resp := b2.ListFilesResponse{
-		NextFileName: "",
+func (c S3Client) loadMap(ctx context.Context, mapping dirMap) error {
+	opts := s3.ListObjectsOptions{
+		Prefix: "musix",
+		Recursive: true,
 	}
-	for {
-		resp, err := c.bucket.ListFileNamesWithPrefix(resp.NextFileName, 999, path, "")
-		if err != nil {
-			return err
+	for object := range c.client.ListObjects(ctx, "buckie", opts) {
+		if object.Err != nil {
+			return object.Err
 		}
-		for _, f := range resp.Files {
-			path := ""
-			m, ok := mapping[path]
-			if !ok {
-				m = dirMapValue{}
-			}
-			m.hasImages = m.hasImages || utils.IsImageFile(f.Name)
-			m.hasPlaylist = m.hasPlaylist || utils.IsPlaylist(f.Name)
-			m.hasAudioFiles = m.hasAudioFiles || utils.IsAudioFile(f.Name)
-			mapping[path] = m
-		}
-		if resp.NextFileName == "" {
-			break
-		}
+		m, path := getObjectPrefixMapping(object.Key, mapping)
+		m.hasImages = m.hasImages || strings.HasPrefix(object.ContentType, "image/")
+		m.hasPlaylist = m.hasPlaylist || strings.HasSuffix(object.Key, ".m3u8") || strings.HasSuffix(object.Key, ".m3u")
+		m.hasAudioFiles = m.hasAudioFiles || strings.HasPrefix(object.ContentType, "audio/")
+		mapping[path] = m
 	}
 	return nil
+}
+
+// getObjectPrefixMapping Uses an object's key to determine its mapping and returns its path prefix
+func getObjectPrefixMapping(key string, mapping dirMap) (dirMapValue, string) {
+	breadcrumbs := strings.Split(key, "/")
+	fileName := breadcrumbs[len(breadcrumbs)-1]
+	fileNameLength := len(fileName)
+	pathPrefix := key[0 : len(key)-fileNameLength]
+	m, ok := mapping[pathPrefix]
+	if !ok {
+		m = dirMapValue{}
+	}
+	return m, pathPrefix
 }

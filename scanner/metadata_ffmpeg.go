@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -70,6 +71,13 @@ func ExtractAllMetadata(inputs []string) (map[string]*Metadata, error) {
 	return mds, nil
 }
 
+// ExtractReaderMetadata takes a
+func ExtractReaderMetadata(input io.Reader) (*Metadata, error) {
+	m := &Metadata{tags: map[string]string{}}
+	m.parseInfo(input)
+	return m, nil
+}
+
 var (
 	// Input #0, mp3, from 'groovin.mp3':
 	inputRegex = regexp.MustCompile(`(?m)^Input #\d+,.*,\sfrom\s'(.*)'`)
@@ -119,7 +127,8 @@ func extractMetadata(filePath, info string) (*Metadata, error) {
 		return nil, errors.New("error stating file")
 	}
 
-	m.parseInfo(info)
+	reader := strings.NewReader(info)
+	m.parseInfo(reader)
 	if len(m.tags) == 0 {
 		log.Trace("Not a media file. Skipping", "filePath", filePath)
 		return nil, errors.New("not a media file")
@@ -127,8 +136,7 @@ func extractMetadata(filePath, info string) (*Metadata, error) {
 	return m, nil
 }
 
-func (m *Metadata) parseInfo(info string) {
-	reader := strings.NewReader(info)
+func (m *Metadata) parseInfo(reader io.Reader) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := scanner.Text()
