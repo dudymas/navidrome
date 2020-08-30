@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/deluan/navidrome/conf"
 	"github.com/deluan/navidrome/log"
 	"github.com/deluan/navidrome/model"
 	"github.com/minio/minio-go/v7"
@@ -28,10 +29,19 @@ type S3CloudScanner struct {
 //NewS3CloudScanner returns an initialized S3CloudScanner
 func NewS3CloudScanner(rootFolder string, ds model.DataStore) *S3CloudScanner {
 	s := S3CloudScanner{}
-	err := s.Login("AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
+	err := s.Login(conf.Server.ObjectStoreAccessID, conf.Server.ObjectStoreAccessKey)
 	if err != nil {
 		log.Error(err)
 	}
+
+	buckets, err := s.s3Client.ListBuckets(context.Background())
+	if err != nil {
+		log.Error(err)
+	}
+	for _, bucket := range buckets {
+		log.Debug(bucket.Name)
+	}
+
 	return &s
 }
 
