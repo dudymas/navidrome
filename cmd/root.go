@@ -69,10 +69,14 @@ func init() {
 	rootCmd.PersistentFlags().String("musicfolder", viper.GetString("musicfolder"), "folder where your music is stored")
 	rootCmd.PersistentFlags().String("datafolder", viper.GetString("datafolder"), "folder to store application data (DB, cache...), needs write access")
 	rootCmd.PersistentFlags().StringP("loglevel", "l", viper.GetString("loglevel"), "log level, possible values: error, info, debug, trace")
+	rootCmd.PersistentFlags().StringP("objectstoreaccessid", "i", viper.GetString("objectstoreaccessid"), "Access ID for object store service")
+	rootCmd.PersistentFlags().StringP("objectstoreaccesskey", "k", viper.GetString("objectstoreaccesskey"), "Access Key for object store service")
 
 	_ = viper.BindPFlag("musicfolder", rootCmd.PersistentFlags().Lookup("musicfolder"))
 	_ = viper.BindPFlag("datafolder", rootCmd.PersistentFlags().Lookup("datafolder"))
 	_ = viper.BindPFlag("loglevel", rootCmd.PersistentFlags().Lookup("loglevel"))
+	_ = viper.BindPFlag("objectstoreaccessid", rootCmd.PersistentFlags().Lookup("objectstoreaccessid"))
+	_ = viper.BindPFlag("objectstoreaccesskey", rootCmd.PersistentFlags().Lookup("objectstoreaccesskey"))
 
 	rootCmd.Flags().StringP("address", "a", viper.GetString("address"), "IP address to bind")
 	rootCmd.Flags().IntP("port", "p", viper.GetInt("port"), "HTTP port Navidrome will use")

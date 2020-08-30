@@ -16,6 +16,8 @@ type configOptions struct {
 	Address                 string
 	Port                    int
 	MusicFolder             string
+	ObjectStoreAccessID     string
+	ObjectStoreAccessKey    string
 	DataFolder              string
 	DbPath                  string
 	LogLevel                string
@@ -85,6 +87,8 @@ func init() {
 	viper.SetDefault("transcodingcachesize", "100MB")
 	viper.SetDefault("imagecachesize", "100MB")
 	viper.SetDefault("autoimportplaylists", true)
+	viper.SetDefault("objectstoreaccessid", "")
+	viper.SetDefault("objectstoreaccesskey", "")
 
 	// Config options only valid for file/env configuration
 	viper.SetDefault("ignoredarticles", "The El La Los Las Le Les Os As O A")

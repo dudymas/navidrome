@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/deluan/navidrome/conf"
 	"github.com/deluan/navidrome/log"
 	"github.com/deluan/navidrome/model"
 )
@@ -89,6 +90,9 @@ func (s *Scanner) loadFolders() {
 func (s *Scanner) newScanner(f model.MediaFolder) FolderScanner {
 	u, err := url.Parse(f.Path)
 	if err == nil && u.Scheme == "s3" {
+		if conf.Server.ObjectStoreAccessID == "" || conf.Server.ObjectStoreAccessKey == "" {
+			log.Error("Attempting to use object store without credentials")
+		}
 		return NewS3CloudScanner(f.Path, s.ds)
 	}
 	return NewTagScanner(f.Path, s.ds)
