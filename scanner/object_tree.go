@@ -36,7 +36,7 @@ func (c S3Client) LoadDirTree(ctx context.Context) (dirMap, error) {
 
 func (c S3Client) loadMap(ctx context.Context, mapping dirMap) error {
 	opts := s3.ListObjectsOptions{
-		Prefix: "musix",
+		Prefix: "/musix/",
 		Recursive: true,
 	}
 	for object := range c.client.ListObjects(ctx, "buckie", opts) {
