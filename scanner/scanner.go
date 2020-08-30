@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -86,6 +87,10 @@ func (s *Scanner) loadFolders() {
 }
 
 func (s *Scanner) newScanner(f model.MediaFolder) FolderScanner {
+	u, err := url.Parse(f.Path)
+	if err == nil && u.Scheme == "s3" {
+		return NewS3CloudScanner(f.Path, s.ds)
+	}
 	return NewTagScanner(f.Path, s.ds)
 }
 

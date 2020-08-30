@@ -29,9 +29,7 @@ type LocalFsClient struct {
 }
 
 func newMediaFileLoader(rootFolder string) *LocalFsClient {
-	return &LocalFsClient{
-		rootFolder: rootFolder,
-	}
+	return &LocalFsClient{rootFolder: rootFolder}
 }
 
 // LoadDirTree populates a directory map with media locations
