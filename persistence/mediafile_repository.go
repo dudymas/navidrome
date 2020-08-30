@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"unicode/utf8"
@@ -17,6 +18,7 @@ import (
 type mediaFileRepository struct {
 	sqlRepository
 	sqlRestful
+	*CloudClient
 }
 
 func NewMediaFileRepository(ctx context.Context, o orm.Ormer) *mediaFileRepository {
@@ -33,6 +35,8 @@ func NewMediaFileRepository(ctx context.Context, o orm.Ormer) *mediaFileReposito
 		"title":   fullTextFilter,
 		"starred": booleanFilter,
 	}
+	c, _ := newS3Client("localhost:9000", "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", "buckie", "/musix")
+	r.CloudClient = c
 	return r
 }
 
@@ -64,6 +68,13 @@ func (r mediaFileRepository) Get(id string) (*model.MediaFile, error) {
 	}
 	if len(res) == 0 {
 		return nil, model.ErrNotFound
+	}
+	u, err := url.Parse(res[0].Path)
+	if err != nil {
+		res[0].MediaReader = &FilesystemStorage{}
+	}
+	if err == nil && u.Scheme == "s3" {
+		res[0].MediaReader = r.CloudClient
 	}
 	return &res[0], nil
 }
@@ -102,7 +113,6 @@ func (r mediaFileRepository) FindAllByPath(path string) (model.MediaFiles, error
 		Where(pathStartsWith(path))
 	sel := r.newSelect().Columns("*", "item NOT GLOB '*"+string(os.PathSeparator)+"*' AS isLast").
 		Where(Eq{"isLast": 1}).FromSelect(sel0, "sel0")
-
 	res := model.MediaFiles{}
 	err := r.queryAll(sel, &res)
 	return res, err

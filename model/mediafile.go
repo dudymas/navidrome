@@ -1,13 +1,25 @@
 package model
 
 import (
+	"context"
+	"io"
 	"mime"
 	"time"
 )
 
+type MediaData interface {
+	io.ReadCloser
+	io.Seeker
+}
+
+type MediaReader interface {
+	GetMedia(context.Context, string) (MediaData, error)
+}
+
 type MediaFile struct {
 	Annotations
 	Bookmarkable
+	MediaReader
 
 	ID                   string    `json:"id"            orm:"pk;column(id)"`
 	Path                 string    `json:"path"`
@@ -69,4 +81,9 @@ type MediaFileRepository interface {
 
 func (mf MediaFile) GetAnnotations() Annotations {
 	return mf.Annotations
+}
+
+// Open will request data
+func (mf *MediaFile) Open(ctx context.Context) (MediaData, error) {
+	return mf.MediaReader.GetMedia(ctx, mf.Path)
 }

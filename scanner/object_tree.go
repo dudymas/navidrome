@@ -11,12 +11,10 @@ import (
 // S3Client represents an object store client
 type S3Client struct {
 	client *s3.Client
+	bucket string
 }
 
-func newB2Client(account, appkey, bucket, path string) (*S3Client, error) {
-	endpoint := "localhost:9000"
-	accessKeyID := "AKIAIOSFODNN7EXAMPLE"
-	secretAccessKey := "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+func newS3Client(endpoint, accessKeyID, secretAccessKey, bucket, path string) (*S3Client, error) {
 	useSSL := false
 	creds := s3Creds.NewStaticV4(accessKeyID, secretAccessKey, "")
 	client, err := s3.New(
@@ -26,7 +24,7 @@ func newB2Client(account, appkey, bucket, path string) (*S3Client, error) {
 			Secure: useSSL,
 		},
 	)
-	return &S3Client{client}, err
+	return &S3Client{client, bucket}, err
 }
 
 // LoadDirTree lists objects in a B2 bucket and maps media found therein

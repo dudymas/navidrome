@@ -30,9 +30,13 @@ type MediaLoader interface {
 }
 
 func NewTagScanner(rootFolder string, ds model.DataStore) *TagScanner {
+	c, err := newS3Client("localhost:9000", "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", "buckie", "/musix")
+	if err != nil {
+		//bad creds
+	}
 	return &TagScanner{
 		rootFolder: rootFolder,
-		loader:     newMediaFileLoader(rootFolder),
+		loader:     c,
 		mapper:     newMediaFileMapper(rootFolder),
 		plsSync:    newPlaylistSync(ds),
 		ds:         ds,

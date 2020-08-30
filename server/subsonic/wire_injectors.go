@@ -22,6 +22,9 @@ var allProviders = wire.NewSet(
 	wire.FieldsOf(new(*Router), "Artwork", "ListGenerator", "Playlists", "Streamer", "Archiver", "DataStore"),
 )
 
+ver LocalFileProviders = wire.NewSet(Abc)
+ver ObjectStorageProviders = wire.NewSet(Abc)
+
 func initSystemController(router *Router) *SystemController {
 	panic(wire.Build(allProviders))
 }

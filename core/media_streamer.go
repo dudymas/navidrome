@@ -66,7 +66,7 @@ func (ms *mediaStreamer) NewStream(ctx context.Context, id string, reqFormat str
 			"requestBitrate", reqBitRate, "requestFormat", reqFormat,
 			"originalBitrate", mf.BitRate, "originalFormat", mf.Suffix,
 			"selectedBitrate", bitRate, "selectedFormat", format)
-		f, err := os.Open(mf.Path)
+		f, err := mf.Open(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -111,7 +111,7 @@ type Stream struct {
 	io.Seeker
 }
 
-func (s *Stream) Seekable() bool      { return s.Seeker != nil }
+func (s *Stream) Seekable() bool      { return s.Seeker != nil}
 func (s *Stream) Duration() float32   { return s.mf.Duration }
 func (s *Stream) ContentType() string { return mime.TypeByExtension("." + s.format) }
 func (s *Stream) Name() string        { return s.mf.Title + "." + s.format }
